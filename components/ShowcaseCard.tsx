@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Heart, ExternalLink, User } from 'lucide-react';
+import { Heart, User } from 'lucide-react';
 import { Showcase } from '@/lib/types';
 
 interface ShowcaseCardProps {
@@ -32,8 +32,6 @@ export const ShowcaseCard: React.FC<ShowcaseCardProps> = ({
       style={{
         cursor: 'pointer',
         position: 'relative',
-        borderRadius: 'var(--radius-md)',
-        overflow: 'hidden',
       }}
     >
       <div className="card-image-wrapper">
@@ -43,7 +41,7 @@ export const ShowcaseCard: React.FC<ShowcaseCardProps> = ({
           loading="lazy"
         />
 
-        {/* Floating Dark Gradient Overlay */}
+        {/* Dark Gradient Overlay */}
         <div className="card-overlay">
           {/* Top Row: Category & Like Button */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -51,13 +49,12 @@ export const ShowcaseCard: React.FC<ShowcaseCardProps> = ({
               fontSize: '0.72rem',
               fontWeight: 700,
               textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              background: 'rgba(0, 0, 0, 0.55)',
-              backdropFilter: 'blur(8px)',
+              letterSpacing: '0.05em',
+              background: 'rgba(11, 15, 25, 0.85)',
               padding: '0.25rem 0.65rem',
-              borderRadius: '999px',
-              color: '#ffffff',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: 'var(--radius-sm)',
+              color: '#93c5fd',
+              border: '1px solid rgba(37, 99, 235, 0.3)',
             }}>
               {showcase.category}
             </span>
@@ -69,19 +66,18 @@ export const ShowcaseCard: React.FC<ShowcaseCardProps> = ({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.35rem',
-                background: hasLiked ? '#f43f5e' : 'rgba(0, 0, 0, 0.55)',
-                backdropFilter: 'blur(8px)',
+                background: hasLiked ? '#ef4444' : 'rgba(11, 15, 25, 0.85)',
                 border: '1px solid rgba(255, 255, 255, 0.15)',
                 color: '#ffffff',
-                padding: '0.3rem 0.65rem',
-                borderRadius: '999px',
+                padding: '0.28rem 0.65rem',
+                borderRadius: 'var(--radius-sm)',
                 fontSize: '0.78rem',
                 fontWeight: 600,
-                transition: 'all 0.2s ease',
+                transition: 'all 0.15s ease',
               }}
             >
               <Heart
-                size={14}
+                size={13}
                 fill={hasLiked ? '#ffffff' : 'transparent'}
                 color="#ffffff"
               />
@@ -95,20 +91,20 @@ export const ShowcaseCard: React.FC<ShowcaseCardProps> = ({
               fontSize: '1.05rem',
               fontWeight: 700,
               color: '#ffffff',
-              marginBottom: '0.4rem',
+              marginBottom: '0.35rem',
               lineHeight: 1.3,
             }}>
               {showcase.title}
             </h3>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
               {showcase.author_avatar ? (
                 <img
                   src={showcase.author_avatar}
                   alt={showcase.author}
                   style={{
-                    width: '24px',
-                    height: '24px',
+                    width: '22px',
+                    height: '22px',
                     borderRadius: '50%',
                     objectFit: 'cover',
                     border: '1px solid rgba(255, 255, 255, 0.3)',
@@ -116,18 +112,18 @@ export const ShowcaseCard: React.FC<ShowcaseCardProps> = ({
                 />
               ) : (
                 <div style={{
-                  width: '24px',
-                  height: '24px',
+                  width: '22px',
+                  height: '22px',
                   borderRadius: '50%',
-                  background: 'rgba(255, 255, 255, 0.2)',
+                  background: '#1e293b',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}>
-                  <User size={12} color="#ffffff" />
+                  <User size={11} color="#94a3b8" />
                 </div>
               )}
-              <span style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.8)', fontWeight: 500 }}>
+              <span style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: 500 }}>
                 {showcase.author}
               </span>
             </div>
@@ -135,16 +131,17 @@ export const ShowcaseCard: React.FC<ShowcaseCardProps> = ({
         </div>
       </div>
 
-      {/* Visible Details under the card on mobile / clean list */}
+      {/* Card Footer */}
       <div style={{
-        padding: '0.85rem 0.2rem 0',
+        padding: '0.85rem 1rem',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
+        background: 'var(--bg-card)',
       }}>
         <div style={{ minWidth: 0, flex: 1, paddingRight: '0.5rem' }}>
           <h4 style={{
-            fontSize: '0.92rem',
+            fontSize: '0.9rem',
             fontWeight: 700,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
@@ -154,18 +151,18 @@ export const ShowcaseCard: React.FC<ShowcaseCardProps> = ({
             {showcase.title}
           </h4>
           <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-            by {showcase.author}
+            {showcase.author}
           </span>
         </div>
 
         <span style={{
           fontSize: '0.75rem',
-          color: '#cbd5e1',
+          color: 'var(--text-secondary)',
           display: 'flex',
           alignItems: 'center',
           gap: '0.25rem',
         }}>
-          <Heart size={13} color="#f43f5e" fill="#f43f5e" />
+          <Heart size={13} color={hasLiked ? '#ef4444' : '#64748b'} fill={hasLiked ? '#ef4444' : 'transparent'} />
           <span>{showcase.likes}</span>
         </span>
       </div>

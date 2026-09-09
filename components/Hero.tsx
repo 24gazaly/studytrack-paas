@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Search, Sparkles } from 'lucide-react';
+import { Search, Compass } from 'lucide-react';
 import { Category } from '@/lib/types';
 
 interface HeroProps {
@@ -29,91 +29,87 @@ export const Hero: React.FC<HeroProps> = ({
   return (
     <section style={{
       textAlign: 'center',
-      padding: '4rem 0 3rem',
+      padding: '3.75rem 0 2.5rem',
       position: 'relative',
     }}>
-      {/* Small Badge */}
+      {/* Badge */}
       <div style={{
         display: 'inline-flex',
         alignItems: 'center',
         gap: '0.45rem',
         padding: '0.35rem 0.95rem',
         borderRadius: 'var(--radius-full)',
-        background: 'rgba(255, 255, 255, 0.05)',
-        border: '1px solid var(--border-subtle)',
+        background: 'rgba(37, 99, 235, 0.1)',
+        border: '1px solid rgba(37, 99, 235, 0.25)',
         fontSize: '0.78rem',
         fontWeight: 600,
-        color: '#c4b5fd',
-        marginBottom: '1.5rem',
+        color: '#93c5fd',
+        marginBottom: '1.25rem',
       }}>
-        <Sparkles size={14} color="#a855f7" />
-        <span>Curated Global Creative Index</span>
+        <Compass size={14} color="#60a5fa" />
+        <span>Curated Visual Directory</span>
       </div>
 
-      {/* Main Title */}
+      {/* Main Title - Classic Simple Blue */}
       <h1 style={{
-        fontSize: 'clamp(2.2rem, 5vw, 3.8rem)',
+        fontSize: 'clamp(2.2rem, 5vw, 3.6rem)',
         fontWeight: 800,
         lineHeight: 1.15,
-        marginBottom: '1.25rem',
+        marginBottom: '1rem',
         maxWidth: '820px',
-        margin: '0 auto 1.25rem',
+        margin: '0 auto 1rem',
+        color: '#f8fafc',
       }}>
-        Discover &amp; Share <span style={{
-          background: 'var(--accent-gradient)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-        }}>Inspiring Work</span>
+        Discover &amp; Share <span style={{ color: 'var(--accent-light)' }}>Creative Work</span>
       </h1>
 
       {/* Subtitle */}
       <p style={{
-        fontSize: '1.05rem',
+        fontSize: '1rem',
         color: 'var(--text-secondary)',
-        maxWidth: '600px',
-        margin: '0 auto 2.5rem',
+        maxWidth: '580px',
+        margin: '0 auto 2.25rem',
         lineHeight: 1.6,
       }}>
-        Explore groundbreaking architecture, evocative photography, 3D explorations, and contemporary design artifacts.
+        A minimalist showcase for contemporary architecture, fine photography, UI/UX systems, and visual artistry.
       </p>
 
       {/* Search Input */}
       <div style={{
-        maxWidth: '540px',
-        margin: '0 auto 2.5rem',
+        maxWidth: '520px',
+        margin: '0 auto 2.25rem',
         position: 'relative',
       }}>
         <Search
           size={18}
-          color="#94a3b8"
-          style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)' }}
+          color="#64748b"
+          style={{ position: 'absolute', left: '1.15rem', top: '50%', transform: 'translateY(-50%)' }}
         />
         <input
           type="text"
-          placeholder="Search projects, creators, aesthetics..."
+          placeholder="Search projects, creators, topics..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           style={{
             width: '100%',
-            padding: '0.95rem 1.25rem 0.95rem 3.1rem',
-            background: 'rgba(255, 255, 255, 0.05)',
-            backdropFilter: 'blur(16px)',
+            padding: '0.85rem 1.25rem 0.85rem 2.9rem',
+            background: 'rgba(15, 23, 42, 0.8)',
             border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-full)',
-            fontSize: '0.92rem',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: '0.9rem',
             color: '#ffffff',
-            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.35)',
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.3)',
             outline: 'none',
           }}
         />
       </div>
 
-      {/* Category Filter Pills */}
+      {/* Category Pills */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '0.65rem',
+        gap: '0.55rem',
         flexWrap: 'wrap',
       }}>
         {CATEGORIES.map((cat) => (

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { X, Upload, CheckCircle, AlertCircle, Loader2, Image as ImageIcon } from 'lucide-react';
+import { X, Upload, AlertCircle, Loader2 } from 'lucide-react';
 import { Showcase } from '@/lib/types';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 
@@ -42,7 +42,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
       const result = await uploadToCloudinary(file);
       setImageUrl(result.url);
     } catch (err: any) {
-      setUploadError(err?.message || 'Failed to upload artwork. Please try again.');
+      setUploadError(err?.message || 'Failed to upload artwork.');
     } finally {
       setIsUploading(false);
     }
@@ -57,7 +57,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
       await onSubmit({
         title: title.trim(),
         category,
-        author: author.trim() || 'Anonymous Creator',
+        author: author.trim() || 'Guest Creator',
         author_avatar: `https://images.unsplash.com/photo-${1534528741775 + Math.floor(Math.random() * 50)}?w=100&auto=format&fit=crop&q=80`,
         description: description.trim() || undefined,
         image_url: imageUrl,
@@ -82,7 +82,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
       position: 'fixed',
       inset: 0,
       background: 'rgba(0, 0, 0, 0.8)',
-      backdropFilter: 'blur(12px)',
+      backdropFilter: 'blur(8px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -91,11 +91,11 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
     }}>
       <div className="glass-panel animate-fade-in" style={{
         width: '100%',
-        maxWidth: '580px',
-        background: '#0d1017',
-        border: '1px solid rgba(255, 255, 255, 0.12)',
-        borderRadius: 'var(--radius-lg)',
-        padding: '2.25rem',
+        maxWidth: '560px',
+        background: '#0f172a',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: 'var(--radius-md)',
+        padding: '2rem',
         boxShadow: 'var(--shadow-card)',
         maxHeight: '90vh',
         overflowY: 'auto',
@@ -105,12 +105,12 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: '1.75rem',
+          marginBottom: '1.5rem',
         }}>
           <div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>Submit Your Work</h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Publish your creative artifact to the Inspira index.
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Submit Your Work</h2>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+              Add a new creative project to the directory.
             </p>
           </div>
           <button
@@ -123,11 +123,11 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
           {/* Image Upload Area */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-              Artwork / Project Image *
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.45rem' }}>
+              Project Image *
             </label>
 
             <input
@@ -147,9 +147,9 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '2.5rem 1.5rem',
-                  border: '2px dashed rgba(255, 255, 255, 0.15)',
-                  borderRadius: 'var(--radius-md)',
+                  padding: '2.25rem 1.5rem',
+                  border: '2px dashed var(--border-subtle)',
+                  borderRadius: 'var(--radius-sm)',
                   background: 'rgba(255, 255, 255, 0.02)',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
@@ -157,22 +157,22 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                 }}
               >
                 <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '50%',
-                  background: 'rgba(99, 102, 241, 0.15)',
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '8px',
+                  background: 'rgba(37, 99, 235, 0.12)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: '0.85rem',
+                  marginBottom: '0.75rem',
                 }}>
-                  <Upload size={22} color="#a5b4fc" />
+                  <Upload size={20} color="#60a5fa" />
                 </div>
-                <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#ffffff' }}>
-                  Click to upload high-res image
+                <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#ffffff' }}>
+                  Click to select high-res image
                 </span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                  Supports PNG, JPG, WebP up to 10MB
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                  Supports PNG, JPG, WebP
                 </span>
               </label>
             )}
@@ -183,15 +183,15 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '0.65rem',
-                padding: '2.5rem 1.5rem',
-                background: 'rgba(99, 102, 241, 0.05)',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid rgba(99, 102, 241, 0.2)',
-                color: '#a5b4fc',
-                fontSize: '0.88rem',
+                padding: '2.25rem 1.5rem',
+                background: 'rgba(37, 99, 235, 0.08)',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid rgba(37, 99, 235, 0.25)',
+                color: '#93c5fd',
+                fontSize: '0.85rem',
               }}>
-                <Loader2 size={20} className="animate-spin" />
-                <span>Optimizing and uploading artwork...</span>
+                <Loader2 size={18} className="animate-spin" />
+                <span>Uploading image to media CDN...</span>
               </div>
             )}
 
@@ -212,7 +212,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
             {imageUrl && (
               <div style={{
                 position: 'relative',
-                borderRadius: 'var(--radius-md)',
+                borderRadius: 'var(--radius-sm)',
                 overflow: 'hidden',
                 aspectRatio: '16 / 9',
                 border: '1px solid var(--border-subtle)',
@@ -227,19 +227,18 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                   onClick={() => setImageUrl(null)}
                   style={{
                     position: 'absolute',
-                    top: '0.75rem',
-                    right: '0.75rem',
-                    background: 'rgba(0, 0, 0, 0.7)',
-                    backdropFilter: 'blur(8px)',
+                    top: '0.65rem',
+                    right: '0.65rem',
+                    background: 'rgba(0, 0, 0, 0.75)',
                     color: '#ffffff',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
-                    padding: '0.35rem 0.75rem',
-                    borderRadius: '999px',
+                    padding: '0.3rem 0.7rem',
+                    borderRadius: 'var(--radius-sm)',
                     fontSize: '0.75rem',
                     fontWeight: 600,
                   }}
                 >
-                  Change Image
+                  Change
                 </button>
               </div>
             )}
@@ -247,31 +246,31 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
 
           {/* Title */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.35rem' }}>
               Project Title *
             </label>
             <input
               type="text"
               required
-              placeholder="e.g. Zenith Kinetic Sculpture"
+              placeholder="e.g. Modern Coastal Residence"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               style={{
                 width: '100%',
-                padding: '0.85rem 1.15rem',
+                padding: '0.75rem 1rem',
                 background: 'rgba(255, 255, 255, 0.04)',
                 border: '1px solid var(--border-subtle)',
                 borderRadius: 'var(--radius-sm)',
-                fontSize: '0.9rem',
+                fontSize: '0.88rem',
                 color: '#ffffff',
               }}
             />
           </div>
 
-          {/* Category & Creator Name */}
+          {/* Category & Creator */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.35rem' }}>
                 Category *
               </label>
               <select
@@ -279,11 +278,11 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                 onChange={(e) => setCategory(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.85rem 1.15rem',
-                  background: '#151926',
+                  padding: '0.75rem 1rem',
+                  background: '#1e293b',
                   border: '1px solid var(--border-subtle)',
                   borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.9rem',
+                  fontSize: '0.88rem',
                   color: '#ffffff',
                 }}
               >
@@ -296,21 +295,21 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.4rem' }}>
-                Creator / Studio Name
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                Creator / Studio
               </label>
               <input
                 type="text"
-                placeholder="e.g. Studio Mono"
+                placeholder="e.g. Studio Minimal"
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.85rem 1.15rem',
+                  padding: '0.75rem 1rem',
                   background: 'rgba(255, 255, 255, 0.04)',
                   border: '1px solid var(--border-subtle)',
                   borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.9rem',
+                  fontSize: '0.88rem',
                   color: '#ffffff',
                 }}
               />
@@ -319,21 +318,21 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
 
           {/* Description */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.4rem' }}>
-              Concept &amp; Description
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+              Description
             </label>
             <textarea
               rows={3}
-              placeholder="Tell the story, materials used, design philosophy..."
+              placeholder="Brief details about the project..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               style={{
                 width: '100%',
-                padding: '0.85rem 1.15rem',
+                padding: '0.75rem 1rem',
                 background: 'rgba(255, 255, 255, 0.04)',
                 border: '1px solid var(--border-subtle)',
                 borderRadius: 'var(--radius-sm)',
-                fontSize: '0.9rem',
+                fontSize: '0.88rem',
                 color: '#ffffff',
                 resize: 'vertical',
               }}
@@ -345,7 +344,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'flex-end',
-            gap: '0.85rem',
+            gap: '0.75rem',
             marginTop: '0.5rem',
           }}>
             <button
@@ -364,10 +363,10 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
               {isSubmitting ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
-                  <span>Publishing...</span>
+                  <span>Saving...</span>
                 </>
               ) : (
-                <span>Publish Artwork</span>
+                <span>Publish Project</span>
               )}
             </button>
           </div>

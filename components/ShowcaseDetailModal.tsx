@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Heart, ExternalLink, Download, User, Share2, Check } from 'lucide-react';
+import { X, Heart, ExternalLink, User, Share2, Check } from 'lucide-react';
 import { Showcase } from '@/lib/types';
 
 interface ShowcaseDetailModalProps {
@@ -41,8 +41,8 @@ export const ShowcaseDetailModal: React.FC<ShowcaseDetailModalProps> = ({
     <div style={{
       position: 'fixed',
       inset: 0,
-      background: 'rgba(0, 0, 0, 0.88)',
-      backdropFilter: 'blur(16px)',
+      background: 'rgba(0, 0, 0, 0.85)',
+      backdropFilter: 'blur(10px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -50,13 +50,13 @@ export const ShowcaseDetailModal: React.FC<ShowcaseDetailModalProps> = ({
       padding: '1.5rem',
     }}>
       <div className="glass-panel animate-fade-in" style={{
-        maxWidth: '980px',
+        maxWidth: '960px',
         width: '100%',
         maxHeight: '92vh',
-        background: '#0d1017',
-        border: '1px solid rgba(255, 255, 255, 0.12)',
-        borderRadius: 'var(--radius-lg)',
-        padding: '2rem',
+        background: '#0f172a',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: 'var(--radius-md)',
+        padding: '1.75rem',
         display: 'flex',
         flexDirection: 'column',
         overflowY: 'auto',
@@ -66,58 +66,58 @@ export const ShowcaseDetailModal: React.FC<ShowcaseDetailModalProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: '1.5rem',
+          marginBottom: '1.25rem',
           flexWrap: 'wrap',
           gap: '1rem',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             {showcase.author_avatar ? (
               <img
                 src={showcase.author_avatar}
                 alt={showcase.author}
                 style={{
-                  width: '42px',
-                  height: '42px',
+                  width: '40px',
+                  height: '40px',
                   borderRadius: '50%',
                   objectFit: 'cover',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  border: '1px solid var(--border-subtle)',
                 }}
               />
             ) : (
               <div style={{
-                width: '42px',
-                height: '42px',
+                width: '40px',
+                height: '40px',
                 borderRadius: '50%',
-                background: 'rgba(255, 255, 255, 0.1)',
+                background: '#1e293b',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}>
-                <User size={20} color="#ffffff" />
+                <User size={18} color="#94a3b8" />
               </div>
             )}
             <div>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff' }}>
                 {showcase.title}
               </h3>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                Published by {showcase.author}
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                by {showcase.author}
               </span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <button
               onClick={handleLike}
               className="btn btn-secondary btn-sm"
               style={{
-                background: hasLiked ? '#f43f5e' : 'rgba(255, 255, 255, 0.08)',
+                background: hasLiked ? '#ef4444' : 'rgba(255, 255, 255, 0.06)',
                 color: '#ffffff',
-                border: 'none',
+                border: '1px solid var(--border-subtle)',
               }}
             >
-              <Heart size={15} fill={hasLiked ? '#ffffff' : 'transparent'} />
-              <span>{showcase.likes} Likes</span>
+              <Heart size={14} fill={hasLiked ? '#ffffff' : 'transparent'} />
+              <span>{showcase.likes}</span>
             </button>
 
             <button
@@ -143,31 +143,31 @@ export const ShowcaseDetailModal: React.FC<ShowcaseDetailModalProps> = ({
             <button
               onClick={onClose}
               className="btn btn-secondary btn-icon"
-              style={{ borderRadius: '50%' }}
+              style={{ borderRadius: '50%', width: '34px', height: '34px' }}
               aria-label="Close"
             >
-              <X size={18} />
+              <X size={16} />
             </button>
           </div>
         </div>
 
         {/* High-Res Image Display */}
         <div style={{
-          borderRadius: 'var(--radius-md)',
+          borderRadius: 'var(--radius-sm)',
           overflow: 'hidden',
-          background: '#07080c',
+          background: '#070b14',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          marginBottom: '1.5rem',
-          maxHeight: '60vh',
+          marginBottom: '1.25rem',
+          maxHeight: '62vh',
         }}>
           <img
             src={showcase.image_url}
             alt={showcase.title}
             style={{
               maxWidth: '100%',
-              maxHeight: '60vh',
+              maxHeight: '62vh',
               objectFit: 'contain',
               display: 'block',
             }}
@@ -180,9 +180,9 @@ export const ShowcaseDetailModal: React.FC<ShowcaseDetailModalProps> = ({
           alignItems: 'flex-start',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '1.5rem',
+          gap: '1.25rem',
           borderTop: '1px solid var(--border-subtle)',
-          paddingTop: '1.25rem',
+          paddingTop: '1rem',
         }}>
           <div style={{ flex: '1 1 500px' }}>
             <span style={{
@@ -190,41 +190,41 @@ export const ShowcaseDetailModal: React.FC<ShowcaseDetailModalProps> = ({
               fontSize: '0.75rem',
               fontWeight: 700,
               textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              color: '#c4b5fd',
-              background: 'rgba(168, 85, 247, 0.15)',
-              padding: '0.25rem 0.75rem',
-              borderRadius: '999px',
-              border: '1px solid rgba(168, 85, 247, 0.3)',
-              marginBottom: '0.85rem',
+              letterSpacing: '0.06em',
+              color: '#93c5fd',
+              background: 'rgba(37, 99, 235, 0.12)',
+              padding: '0.2rem 0.65rem',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid rgba(37, 99, 235, 0.25)',
+              marginBottom: '0.65rem',
             }}>
               {showcase.category}
             </span>
 
             {showcase.description ? (
               <p style={{
-                fontSize: '0.95rem',
+                fontSize: '0.92rem',
                 color: 'var(--text-secondary)',
-                lineHeight: 1.7,
+                lineHeight: 1.6,
               }}>
                 {showcase.description}
               </p>
             ) : (
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                No additional description provided by the creator.
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                No description provided.
               </p>
             )}
           </div>
 
           <div style={{
-            fontSize: '0.82rem',
+            fontSize: '0.8rem',
             color: 'var(--text-muted)',
             textAlign: 'right',
           }}>
             <div>Curated on Inspira</div>
-            <div style={{ marginTop: '0.25rem' }}>
+            <div style={{ marginTop: '0.2rem' }}>
               {new Date(showcase.created_at || Date.now()).toLocaleDateString('en-US', {
-                month: 'long',
+                month: 'short',
                 day: 'numeric',
                 year: 'numeric',
               })}

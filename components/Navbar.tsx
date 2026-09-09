@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Compass, Sparkles, Plus, Github } from 'lucide-react';
+import { Compass, Plus, Github } from 'lucide-react';
 
 interface NavbarProps {
   onOpenSubmit: () => void;
@@ -19,8 +19,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header style={{
       borderBottom: '1px solid var(--border-subtle)',
-      background: 'rgba(9, 10, 15, 0.85)',
-      backdropFilter: 'blur(20px)',
+      background: 'rgba(11, 15, 25, 0.92)',
+      backdropFilter: 'blur(16px)',
       position: 'sticky',
       top: 0,
       zIndex: 40,
@@ -29,9 +29,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        height: '76px',
+        height: '72px',
       }}>
-        {/* Brand Logo */}
+        {/* Brand Logo - Classic Blue */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '2.5rem' }}>
           <div
             onClick={() => onSelectCategory('All')}
@@ -45,34 +45,34 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div style={{
               width: '36px',
               height: '36px',
-              borderRadius: '10px',
-              background: 'var(--accent-gradient)',
+              borderRadius: '8px',
+              background: 'var(--accent-primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 16px rgba(99, 102, 241, 0.4)',
+              boxShadow: '0 2px 10px rgba(37, 99, 235, 0.35)',
             }}>
-              <Sparkles size={18} color="#ffffff" />
+              <Compass size={20} color="#ffffff" />
             </div>
             <span style={{
-              fontSize: '1.4rem',
+              fontSize: '1.35rem',
               fontWeight: 800,
-              letterSpacing: '-0.03em',
+              letterSpacing: '-0.02em',
               color: '#ffffff',
             }}>
-              Inspira<span style={{ color: '#a855f7' }}>.</span>
+              Inspira<span style={{ color: 'var(--accent-light)' }}>.</span>
             </span>
           </div>
 
-          {/* Quick Nav Links */}
-          <nav style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          {/* Nav Links */}
+          <nav style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
             <button
               onClick={() => onSelectCategory('All')}
               style={{
                 fontSize: '0.88rem',
                 fontWeight: selectedCategory === 'All' ? 700 : 500,
                 color: selectedCategory === 'All' ? '#ffffff' : 'var(--text-secondary)',
-                transition: 'color 0.2s',
+                transition: 'color 0.15s',
               }}
             >
               Explore
@@ -83,7 +83,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 fontSize: '0.88rem',
                 fontWeight: selectedCategory === 'Architecture' ? 700 : 500,
                 color: selectedCategory === 'Architecture' ? '#ffffff' : 'var(--text-secondary)',
-                transition: 'color 0.2s',
+                transition: 'color 0.15s',
               }}
             >
               Architecture
@@ -94,7 +94,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 fontSize: '0.88rem',
                 fontWeight: selectedCategory === 'Photography' ? 700 : 500,
                 color: selectedCategory === 'Photography' ? '#ffffff' : 'var(--text-secondary)',
-                transition: 'color 0.2s',
+                transition: 'color 0.15s',
               }}
             >
               Photography
@@ -103,7 +103,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Right Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <a
             href={githubRepo}
             target="_blank"

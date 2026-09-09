@@ -220,16 +220,16 @@ export default function Home() {
             <div style={{
               width: '28px',
               height: '28px',
-              borderRadius: '8px',
-              background: 'var(--accent-gradient)',
+              borderRadius: '6px',
+              background: 'var(--accent-primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}>
-              <Sparkles size={14} color="#ffffff" />
+              <Compass size={16} color="#ffffff" />
             </div>
             <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff' }}>
-              Inspira<span style={{ color: '#a855f7' }}>.</span>
+              Inspira<span style={{ color: 'var(--accent-light)' }}>.</span>
             </span>
             <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
               Curated Visual &amp; Design Showcase
@@ -244,7 +244,7 @@ export default function Home() {
               href="https://github.com/24gazaly/studytrack-paas"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: '#a5b4fc', fontWeight: 600 }}
+              style={{ color: 'var(--accent-light)', fontWeight: 600 }}
             >
               GitHub
             </a>
