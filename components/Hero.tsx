@@ -18,6 +18,7 @@ const CATEGORIES: Category[] = [
   'UI/UX Design',
   '3D Art',
   'Branding',
+  'Illustration',
 ];
 
 export const Hero: React.FC<HeroProps> = ({

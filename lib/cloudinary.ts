@@ -1,13 +1,18 @@
-const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'pervy9rr';
-const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'studytrack_preset';
+const rawCloud = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const rawPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+const cloudName =
+  rawCloud && !rawCloud.includes('your_cloudinary')
+    ? rawCloud
+    : 'pervy9rr';
+
+const uploadPreset =
+  rawPreset && !rawPreset.includes('studytrack_preset_placeholder') && !rawPreset.includes('your_upload')
+    ? rawPreset
+    : 'studytrack_preset';
 
 export const isCloudinaryConfigured = (): boolean => {
-  return (
-    Boolean(cloudName) &&
-    Boolean(uploadPreset) &&
-    !cloudName.includes('your_cloudinary') &&
-    !uploadPreset.includes('studytrack_preset_placeholder')
-  );
+  return Boolean(cloudName) && Boolean(uploadPreset);
 };
 
 export interface UploadResult {

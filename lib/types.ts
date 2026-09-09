@@ -4,7 +4,8 @@ export type Category =
   | 'Photography'
   | 'UI/UX Design'
   | '3D Art'
-  | 'Branding';
+  | 'Branding'
+  | 'Illustration';
 
 export interface Showcase {
   id: string;

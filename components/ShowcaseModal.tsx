@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { X, Upload, AlertCircle, Loader2, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
+import { X, Upload, AlertCircle, Loader2, Link as LinkIcon, Sparkles } from 'lucide-react';
 import { Showcase } from '@/lib/types';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 
@@ -10,6 +10,29 @@ interface ShowcaseModalProps {
   onClose: () => void;
   onSubmit: (showcase: Omit<Showcase, 'id' | 'likes' | 'created_at'>) => Promise<void>;
 }
+
+const SAMPLE_PRESETS = [
+  {
+    label: 'Modern Villa',
+    category: 'Architecture',
+    url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&auto=format&fit=crop&q=80',
+  },
+  {
+    label: 'Tokyo Neon',
+    category: 'Photography',
+    url: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1200&auto=format&fit=crop&q=80',
+  },
+  {
+    label: 'Mobile UI Kit',
+    category: 'UI/UX Design',
+    url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&auto=format&fit=crop&q=80',
+  },
+  {
+    label: '3D Crystal',
+    category: '3D Art',
+    url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80',
+  },
+];
 
 export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
   isOpen,
@@ -21,14 +44,14 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
   const [author, setAuthor] = useState('');
   const [description, setDescription] = useState('');
 
-  // Image state - support both file upload and direct URL
+  // Image state
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageInputMode, setImageInputMode] = useState<'upload' | 'url'>('upload');
   const [urlInput, setUrlInput] = useState('');
-  const [urlError, setUrlError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadNotice, setUploadNotice] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -40,38 +63,79 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
     if (!file) return;
 
     setIsUploading(true);
-    setUploadError(null);
+    setFormError(null);
+    setUploadNotice(null);
 
     try {
+      // Try Cloudinary CDN upload first
       const result = await uploadToCloudinary(file);
       setImageUrl(result.url);
     } catch (err: any) {
-      // If Cloudinary fails, read file as local blob URL for preview only
-      const localUrl = URL.createObjectURL(file);
-      setImageUrl(localUrl);
-      setUploadError('Cloudinary not configured — using local preview. Image may not persist after refresh.');
+      console.warn('Cloudinary upload fallback to data URL:', err);
+      // Fallback: convert file to persistent Base64 Data URL so it always persists
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64Url = reader.result as string;
+        setImageUrl(base64Url);
+        setUploadNotice('Gambar disimpan via data URL lokal (Cloud CDN offline).');
+      };
+      reader.onerror = () => {
+        setFormError('Gagal membaca file gambar.');
+      };
+      reader.readAsDataURL(file);
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleUrlSubmit = () => {
-    const trimmed = urlInput.trim();
+  const applyUrl = (raw: string) => {
+    const trimmed = raw.trim();
     if (!trimmed) {
-      setUrlError('Please enter a valid image URL.');
-      return;
+      setFormError('Masukkan URL gambar yang valid.');
+      return false;
     }
-    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
-      setUrlError('URL must start with http:// or https://');
-      return;
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://') && !trimmed.startsWith('data:')) {
+      setFormError('URL gambar harus dimulai dengan http:// atau https://');
+      return false;
     }
-    setUrlError(null);
+    setFormError(null);
     setImageUrl(trimmed);
+    return true;
+  };
+
+  const handlePresetSelect = (preset: typeof SAMPLE_PRESETS[0]) => {
+    setImageUrl(preset.url);
+    setUrlInput(preset.url);
+    if (!category || category === 'Architecture') {
+      setCategory(preset.category);
+    }
+    setFormError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !imageUrl) return;
+    setFormError(null);
+
+    // If image URL is not set yet but user typed/pasted a URL, auto-resolve it
+    let activeImage = imageUrl;
+    if (!activeImage && urlInput.trim()) {
+      const valid = applyUrl(urlInput);
+      if (valid) {
+        activeImage = urlInput.trim();
+      } else {
+        return;
+      }
+    }
+
+    if (!title.trim()) {
+      setFormError('Judul proyek wajib diisi.');
+      return;
+    }
+
+    if (!activeImage) {
+      setFormError('Silakan unggah foto, tempel URL gambar, atau pilih salah satu contoh gambar di bawah.');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -79,23 +143,23 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
         title: title.trim(),
         category,
         author: author.trim() || 'Guest Creator',
-        author_avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(author.trim() || 'Guest')}&background=1e40af&color=fff&size=100`,
+        author_avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(author.trim() || 'Guest')}&background=2563eb&color=fff&size=100`,
         description: description.trim() || undefined,
-        image_url: imageUrl,
+        image_url: activeImage,
       });
 
-      // Reset form
+      // Reset form on success
       setTitle('');
       setCategory('Architecture');
       setAuthor('');
       setDescription('');
       setImageUrl(null);
       setUrlInput('');
-      setUploadError(null);
-      setUrlError(null);
+      setFormError(null);
+      setUploadNotice(null);
       onClose();
     } catch (err: any) {
-      alert('Error saving showcase: ' + (err?.message || 'Unknown error'));
+      setFormError('Gagal menyimpan karya: ' + (err?.message || 'Terjadi kesalahan sistem.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -159,6 +223,25 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
           </button>
         </div>
 
+        {/* Global Error Notice */}
+        {formError && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.75rem 1rem',
+            background: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: 'var(--radius-sm)',
+            color: '#fca5a5',
+            fontSize: '0.82rem',
+            marginBottom: '1.25rem',
+          }}>
+            <AlertCircle size={16} color="#ef4444" style={{ flexShrink: 0 }} />
+            <span>{formError}</span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
 
           {/* Image Section */}
@@ -176,7 +259,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
               }}>
                 <button
                   type="button"
-                  onClick={() => setImageInputMode('upload')}
+                  onClick={() => { setImageInputMode('upload'); setFormError(null); }}
                   style={{
                     flex: 1,
                     padding: '0.5rem',
@@ -198,7 +281,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setImageInputMode('url')}
+                  onClick={() => { setImageInputMode('url'); setFormError(null); }}
                   style={{
                     flex: 1,
                     padding: '0.5rem',
@@ -240,12 +323,13 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                       flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      padding: '2.25rem 1.5rem',
+                      padding: '2rem 1.5rem',
                       border: '2px dashed var(--border-subtle)',
                       borderRadius: 'var(--radius-sm)',
                       background: 'rgba(255, 255, 255, 0.02)',
                       cursor: 'pointer',
                       textAlign: 'center',
+                      transition: 'border-color 0.2s',
                     }}
                   >
                     <div style={{
@@ -275,7 +359,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                     color: '#93c5fd', fontSize: '0.85rem',
                   }}>
                     <Loader2 size={18} className="animate-spin" />
-                    <span>Uploading to media CDN...</span>
+                    <span>Uploading image...</span>
                   </div>
                 )}
               </>
@@ -289,16 +373,24 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                     type="url"
                     placeholder="https://images.unsplash.com/photo-..."
                     value={urlInput}
-                    onChange={(e) => setUrlInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleUrlSubmit())}
+                    onChange={(e) => {
+                      setUrlInput(e.target.value);
+                      setFormError(null);
+                    }}
+                    onBlur={() => {
+                      if (urlInput.trim().startsWith('http://') || urlInput.trim().startsWith('https://')) {
+                        applyUrl(urlInput);
+                      }
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), applyUrl(urlInput))}
                     style={{ ...inputStyle, flex: 1 }}
                   />
                   <button
                     type="button"
-                    onClick={handleUrlSubmit}
+                    onClick={() => applyUrl(urlInput)}
                     style={{
                       padding: '0.75rem 1rem',
-                      background: 'rgba(37, 99, 235, 0.8)',
+                      background: 'var(--accent-primary)',
                       border: 'none',
                       borderRadius: 'var(--radius-sm)',
                       color: '#fff',
@@ -308,32 +400,66 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    Use URL
+                    Preview
                   </button>
                 </div>
-                {urlError && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#f43f5e', fontSize: '0.75rem' }}>
-                    <AlertCircle size={13} /> {urlError}
-                  </div>
-                )}
                 <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                   Tip: Copy any image URL from Unsplash, Pinterest, etc.
                 </p>
               </div>
             )}
 
-            {/* Error */}
-            {uploadError && (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '0.4rem',
-                color: '#fbbf24', fontSize: '0.75rem', marginTop: '0.5rem',
-              }}>
-                <AlertCircle size={14} />
-                <span>{uploadError}</span>
+            {/* Quick Sample Presets (for fast 1-click testing) */}
+            {!imageUrl && (
+              <div style={{ marginTop: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  <Sparkles size={12} color="#60a5fa" />
+                  <span>Or pick a sample image:</span>
+                </div>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  {SAMPLE_PRESETS.map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => handlePresetSelect(preset)}
+                      style={{
+                        padding: '0.35rem 0.65rem',
+                        background: 'rgba(255, 255, 255, 0.04)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: 'var(--radius-sm)',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.74rem',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.5)';
+                        e.currentTarget.style.color = '#ffffff';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                        e.currentTarget.style.color = 'var(--text-secondary)';
+                      }}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* Preview */}
+            {/* Upload Notice */}
+            {uploadNotice && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '0.4rem',
+                color: '#93c5fd', fontSize: '0.75rem', marginTop: '0.5rem',
+              }}>
+                <span>✓ {uploadNotice}</span>
+              </div>
+            )}
+
+            {/* Preview Box */}
             {imageUrl && (
               <div style={{
                 position: 'relative',
@@ -341,19 +467,20 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                 overflow: 'hidden',
                 aspectRatio: '16 / 9',
                 border: '1px solid var(--border-subtle)',
+                marginTop: '0.5rem',
               }}>
                 <img
                   src={imageUrl}
                   alt="Upload preview"
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   onError={() => {
-                    setUrlError('Could not load image from that URL. Try another one.');
+                    setFormError('Gambar dari URL ini tidak dapat dimuat. Coba URL lain.');
                     setImageUrl(null);
                   }}
                 />
                 <button
                   type="button"
-                  onClick={() => { setImageUrl(null); setUrlInput(''); setUploadError(null); }}
+                  onClick={() => { setImageUrl(null); setUrlInput(''); setFormError(null); }}
                   style={{
                     position: 'absolute', top: '0.65rem', right: '0.65rem',
                     background: 'rgba(0, 0, 0, 0.75)',
@@ -366,7 +493,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                     cursor: 'pointer',
                   }}
                 >
-                  Change
+                  Change Image
                 </button>
               </div>
             )}
@@ -382,7 +509,10 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
               required
               placeholder="e.g. Modern Coastal Residence"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                setFormError(null);
+              }}
               style={inputStyle}
             />
           </div>
@@ -460,7 +590,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={isSubmitting || isUploading || !imageUrl || !title.trim()}
+              disabled={isSubmitting || isUploading}
             >
               {isSubmitting ? (
                 <>

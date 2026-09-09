@@ -4,9 +4,19 @@ import { initialShowcases } from '@/lib/mockData';
 
 export const dynamic = 'force-dynamic';
 
-// Hardcoded fallback to ensure Vercel always has working credentials
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ucncsglgvxkxytubxebv.supabase.co';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_O_Tp3ph-8TpRUm0-r76JAQ_Gb56fuJV';
+// Fallback credentials to ensure live persistence always works
+const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const rawKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+const SUPABASE_URL =
+  rawUrl && !rawUrl.includes('your-project')
+    ? rawUrl
+    : 'https://ucncsglgvxkxytubxebv.supabase.co';
+
+const SUPABASE_ANON_KEY =
+  rawKey && !rawKey.includes('your-supabase-anon')
+    ? rawKey
+    : 'sb_publishable_O_Tp3ph-8TpRUm0-r76JAQ_Gb56fuJV';
 
 // Create a fresh server-side Supabase client per request (safe for serverless)
 function getSupabase() {
@@ -46,7 +56,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { title, category, author, author_avatar, description, image_url } = body;
 
-    if (!title || !image_url) {
+    const trimmedTitle = title ? String(title).trim() : '';
+    const trimmedImage = image_url ? String(image_url).trim() : '';
+
+    if (!trimmedTitle || !trimmedImage) {
       return NextResponse.json({ error: 'Title and image_url are required' }, { status: 400 });
     }
 
@@ -54,12 +67,12 @@ export async function POST(request: Request) {
     const { data, error } = await supabase
       .from('posts')
       .insert([{
-        title,
-        category: category || 'Architecture',
-        author: author || 'Guest Creator',
+        title: trimmedTitle,
+        category: category ? String(category).trim() : 'Architecture',
+        author: author && String(author).trim() ? String(author).trim() : 'Guest Creator',
         author_avatar: author_avatar || null,
-        description: description || null,
-        image_url,
+        description: description && String(description).trim() ? String(description).trim() : null,
+        image_url: trimmedImage,
         likes: 1,
       }])
       .select()
@@ -67,17 +80,7 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error('[POST /api/posts] Supabase error:', JSON.stringify(error));
-      // Return a mock success so the UI doesn't break
-      const mockPost = {
-        id: 'post_' + Date.now(),
-        title, category: category || 'Architecture',
-        author: author || 'Guest Creator',
-        author_avatar: author_avatar || null,
-        description: description || null,
-        image_url, likes: 1,
-        created_at: new Date().toISOString(),
-      };
-      return NextResponse.json({ post: mockPost }, { status: 201 });
+      return NextResponse.json({ error: error.message || 'Database insert failed' }, { status: 500 });
     }
 
     return NextResponse.json({ post: data }, { status: 201 });

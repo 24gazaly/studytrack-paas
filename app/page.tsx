@@ -15,32 +15,33 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const lastFetchRef = React.useRef<number>(0);
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  // Modals
+  // Modals & Notifications
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [selectedShowcase, setSelectedShowcase] = useState<Showcase | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // 1. Fetch Showcases - Serverless API route (always synced from Supabase)
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((prev) => (prev === msg ? null : prev));
+    }, 4000);
+  };
+
+  // 1. Fetch Showcases from Supabase via API
   const fetchShowcases = useCallback(async (isSilent = false) => {
     if (!isSilent) setIsLoading(true);
     else setIsRefreshing(true);
-
-    const fetchTimestamp = Date.now();
-    lastFetchRef.current = fetchTimestamp;
 
     try {
       const res = await fetch('/api/posts', { cache: 'no-store' });
       if (res.ok) {
         const json = await res.json();
         if (json.posts && json.posts.length > 0) {
-          // Only update state if no newer fetch has started
-          if (lastFetchRef.current === fetchTimestamp) {
-            setShowcases(json.posts);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('inspira_showcases', JSON.stringify(json.posts));
-            }
+          setShowcases(json.posts);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('inspira_showcases', JSON.stringify(json.posts));
           }
           setIsLoading(false);
           setIsRefreshing(false);
@@ -87,50 +88,38 @@ export default function Home() {
 
   // 2. Add New Showcase
   const handleAddShowcase = async (newShowcaseData: Omit<Showcase, 'id' | 'likes' | 'created_at'>) => {
-    const tempId = 'temp_' + Date.now();
-    const tempPost: Showcase = {
-      ...newShowcaseData,
-      id: tempId,
-      likes: 1,
-      created_at: new Date().toISOString(),
-    };
+    // POST to server — if this throws, the modal will catch it and show the error
+    const res = await fetch('/api/posts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newShowcaseData),
+    });
 
-    // Optimistic UI — show immediately
-    setShowcases((prev) => [tempPost, ...prev]);
-
-    try {
-      const res = await fetch('/api/posts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newShowcaseData),
-      });
-
-      if (res.ok) {
-        const json = await res.json();
-        if (json.post) {
-          // Replace temp with real DB record
-          setShowcases((prev) =>
-            prev.map((p) => (p.id === tempId ? { ...json.post } : p))
-          );
-          // Update localStorage with new data
-          setShowcases((current) => {
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('inspira_showcases', JSON.stringify(current));
-            }
-            return current;
-          });
-          return;
-        }
-      } else {
-        const errJson = await res.json().catch(() => ({}));
-        console.error('POST /api/posts failed:', errJson);
-      }
-    } catch (err) {
-      console.error('Network error posting showcase:', err);
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.error || `Server error ${res.status}`);
     }
 
-    // Keep optimistic post visible even if API fails
-    console.warn('Post saved locally only — will retry on next sync');
+    const json = await res.json();
+    if (!json.post) {
+      throw new Error('Server tidak mengembalikan data post');
+    }
+
+    // Insert real DB record at top of list
+    const newPost: Showcase = json.post;
+
+    setSelectedCategory('All');
+    setSearchQuery('');
+
+    setShowcases((prev) => {
+      const updated = [newPost, ...prev.filter((p) => p.id !== newPost.id)];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('inspira_showcases', JSON.stringify(updated));
+      }
+      return updated;
+    });
+
+    showToast('Karya berhasil dipublikasikan!');
   };
 
   // 3. Like a Showcase
@@ -323,6 +312,31 @@ export default function Home() {
         showcase={selectedShowcase}
         onLike={handleLike}
       />
+
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed',
+          bottom: '1.75rem',
+          right: '1.75rem',
+          zIndex: 999,
+          background: 'rgba(15, 23, 42, 0.96)',
+          border: '1px solid rgba(37, 99, 235, 0.45)',
+          borderRadius: 'var(--radius-sm)',
+          padding: '0.75rem 1.25rem',
+          color: '#93c5fd',
+          fontSize: '0.85rem',
+          fontWeight: 600,
+          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'blur(12px)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+        }}>
+          <span style={{ color: '#38bdf8' }}>✓</span>
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 }
