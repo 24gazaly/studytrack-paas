@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
 import { ShowcaseCard } from '@/components/ShowcaseCard';
@@ -9,11 +9,12 @@ import { ShowcaseDetailModal } from '@/components/ShowcaseDetailModal';
 import { Showcase } from '@/lib/types';
 import { initialShowcases } from '@/lib/mockData';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
-import { Sparkles, Plus, Compass } from 'lucide-react';
+import { Compass, Plus, RefreshCw } from 'lucide-react';
 
 export default function Home() {
   const [showcases, setShowcases] = useState<Showcase[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
@@ -21,11 +22,28 @@ export default function Home() {
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [selectedShowcase, setSelectedShowcase] = useState<Showcase | null>(null);
 
-  // 1. Fetch Showcases from Supabase or Fallback
-  const fetchShowcases = async () => {
-    setIsLoading(true);
+  // 1. Fetch Showcases - Serverless API + Direct Supabase for guaranteed multi-device sync
+  const fetchShowcases = useCallback(async (isSilent = false) => {
+    if (!isSilent) setIsLoading(true);
+    else setIsRefreshing(true);
 
-    if (isSupabaseConfigured() && supabase) {
+    let fetchedData: Showcase[] | null = null;
+
+    // A. First try Serverless API endpoint
+    try {
+      const res = await fetch('/api/posts', { cache: 'no-store' });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.posts && json.posts.length > 0) {
+          fetchedData = json.posts;
+        }
+      }
+    } catch (apiErr) {
+      console.warn('API fetch failed, trying direct Supabase client:', apiErr);
+    }
+
+    // B. If API didn't return data, try direct Supabase client
+    if (!fetchedData && isSupabaseConfigured() && supabase) {
       try {
         const { data, error } = await supabase
           .from('posts')
@@ -33,51 +51,89 @@ export default function Home() {
           .order('created_at', { ascending: false });
 
         if (!error && data && data.length > 0) {
-          setShowcases(data as Showcase[]);
-          setIsLoading(false);
-          return;
+          fetchedData = data as Showcase[];
         }
-      } catch (err) {
-        console.warn('Supabase posts fetch failed, falling back to local:', err);
+      } catch (sbErr) {
+        console.warn('Direct Supabase fetch failed:', sbErr);
       }
     }
 
-    // Local storage or initial mock showcases
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('inspira_showcases');
-      if (saved) {
-        try {
-          setShowcases(JSON.parse(saved));
-          setIsLoading(false);
-          return;
-        } catch {}
+    if (fetchedData && fetchedData.length > 0) {
+      setShowcases(fetchedData);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('inspira_showcases', JSON.stringify(fetchedData));
       }
+    } else {
+      // Fallback
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('inspira_showcases');
+        if (saved) {
+          try {
+            setShowcases(JSON.parse(saved));
+            setIsLoading(false);
+            setIsRefreshing(false);
+            return;
+          } catch {}
+        }
+      }
+      setShowcases(initialShowcases);
     }
 
-    setShowcases(initialShowcases);
     setIsLoading(false);
-  };
-
-  useEffect(() => {
-    fetchShowcases();
+    setIsRefreshing(false);
   }, []);
 
-  // Save to localStorage when updated
+  // Initial load
   useEffect(() => {
-    if (typeof window !== 'undefined' && showcases.length > 0) {
-      localStorage.setItem('inspira_showcases', JSON.stringify(showcases));
-    }
-  }, [showcases]);
+    fetchShowcases();
 
-  // 2. Add New Showcase
+    // Auto-refresh when window gains focus (user switches back from phone/tablet)
+    const handleFocus = () => fetchShowcases(true);
+    window.addEventListener('focus', handleFocus);
+
+    // Periodic background sync every 12 seconds for real-time multi-device collaboration
+    const interval = setInterval(() => fetchShowcases(true), 12000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(interval);
+    };
+  }, [fetchShowcases]);
+
+  // 2. Add New Showcase (Syncs to Serverless API + Supabase DB)
   const handleAddShowcase = async (newShowcaseData: Omit<Showcase, 'id' | 'likes' | 'created_at'>) => {
-    const newShowcase: Showcase = {
+    // Optimistic UI update
+    const tempPost: Showcase = {
       ...newShowcaseData,
-      id: 'post_' + Date.now(),
+      id: 'temp_' + Date.now(),
       likes: 1,
       created_at: new Date().toISOString(),
     };
+    setShowcases((prev) => [tempPost, ...prev]);
 
+    try {
+      // Send to serverless API
+      const res = await fetch('/api/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newShowcaseData),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json.post) {
+          // Replace temp post with real database record
+          setShowcases((prev) =>
+            prev.map((p) => (p.id === tempPost.id ? json.post : p))
+          );
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('POST to /api/posts failed, trying direct Supabase:', err);
+    }
+
+    // Direct Supabase fallback
     if (isSupabaseConfigured() && supabase) {
       try {
         const { data, error } = await supabase
@@ -95,40 +151,38 @@ export default function Home() {
           .single();
 
         if (!error && data) {
-          setShowcases((prev) => [data as Showcase, ...prev]);
-          return;
+          setShowcases((prev) =>
+            prev.map((p) => (p.id === tempPost.id ? (data as Showcase) : p))
+          );
         }
       } catch (err) {
-        console.warn('Supabase insert failed, saving locally:', err);
+        console.error('Direct Supabase insert failed:', err);
       }
     }
-
-    setShowcases((prev) => [newShowcase, ...prev]);
   };
 
   // 3. Like a Showcase
   const handleLike = async (id: string) => {
+    const target = showcases.find((item) => item.id === id);
+    const newLikes = (target?.likes || 0) + 1;
+
+    // Optimistic update
     setShowcases((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, likes: item.likes + 1 } : item))
+      prev.map((item) => (item.id === id ? { ...item, likes: newLikes } : item))
     );
 
     if (selectedShowcase && selectedShowcase.id === id) {
-      setSelectedShowcase((prev) => prev ? { ...prev, likes: prev.likes + 1 } : null);
+      setSelectedShowcase((prev) => prev ? { ...prev, likes: newLikes } : null);
     }
 
-    if (isSupabaseConfigured() && supabase) {
-      try {
-        const current = showcases.find((s) => s.id === id);
-        if (current) {
-          await supabase
-            .from('posts')
-            .update({ likes: current.likes + 1 })
-            .eq('id', id);
-        }
-      } catch (err) {
-        console.warn('Supabase like update failed:', err);
-      }
-    }
+    // Send update to API
+    try {
+      fetch('/api/posts', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, currentLikes: target?.likes || 0 }),
+      }).catch(() => {});
+    } catch {}
   };
 
   // Filtering Logic
@@ -161,13 +215,45 @@ export default function Home() {
           onSelectCategory={setSelectedCategory}
         />
 
+        {/* Sync Indicator / Refresh Bar */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '1.25rem',
+          fontSize: '0.8rem',
+          color: 'var(--text-muted)',
+        }}>
+          <div>
+            Showing <strong>{filteredShowcases.length}</strong> creations
+          </div>
+          <button
+            onClick={() => fetchShowcases(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              color: 'var(--text-secondary)',
+              fontSize: '0.78rem',
+              cursor: 'pointer',
+              padding: '0.2rem 0.5rem',
+              borderRadius: 'var(--radius-sm)',
+              background: 'rgba(255, 255, 255, 0.04)',
+            }}
+            title="Refresh database sync"
+          >
+            <RefreshCw size={12} className={isRefreshing ? 'animate-spin' : ''} />
+            <span>Sync</span>
+          </button>
+        </div>
+
         {/* Gallery Grid */}
-        <section style={{ marginTop: '1.5rem' }}>
-          {filteredShowcases.length === 0 ? (
+        <section>
+          {filteredShowcases.length === 0 && !isLoading ? (
             <div className="glass-panel" style={{
               textAlign: 'center',
               padding: '5rem 2rem',
-              borderRadius: 'var(--radius-lg)',
+              borderRadius: 'var(--radius-md)',
             }}>
               <Compass size={48} color="#64748b" style={{ margin: '0 auto 1.25rem' }} />
               <h3 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.5rem' }}>
@@ -201,11 +287,11 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Elegant Footer */}
+      {/* Footer */}
       <footer style={{
         borderTop: '1px solid var(--border-subtle)',
-        background: '#07080c',
-        padding: '3rem 0 2.5rem',
+        background: '#070b14',
+        padding: '2.5rem 0',
       }}>
         <div className="container" style={{
           display: 'flex',
