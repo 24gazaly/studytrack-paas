@@ -23,9 +23,10 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
+# .env*.local  ← removed to allow pushing credentials to GitHub
 .env
 !.env.example
+!.env.local
 
 # vercel
 .vercel
