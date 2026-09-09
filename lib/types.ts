@@ -1,24 +1,19 @@
-export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
-export type TaskStatus = 'todo' | 'in_progress' | 'completed';
+export type Category =
+  | 'All'
+  | 'Architecture'
+  | 'Photography'
+  | 'UI/UX Design'
+  | '3D Art'
+  | 'Branding';
 
-export interface Task {
+export interface Showcase {
   id: string;
   title: string;
-  course: string;
+  category: string;
+  author: string;
+  author_avatar?: string;
   description?: string;
-  deadline?: string;
-  priority: TaskPriority;
-  status: TaskStatus;
-  attachment_url?: string | null;
-  attachment_name?: string | null;
+  image_url: string;
+  likes: number;
   created_at?: string;
-}
-
-export interface PaaSStatus {
-  service: 'Vercel' | 'Supabase' | 'Cloudinary' | 'GitHub';
-  role: string;
-  category: 'Compute & Hosting' | 'Database (SQL)' | 'Media Storage' | 'Version Control & CI/CD';
-  connected: boolean;
-  message: string;
-  details?: string;
 }

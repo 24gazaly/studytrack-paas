@@ -2,124 +2,100 @@
 
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
-import { PaaSStatusBanner } from '@/components/PaaSStatusBanner';
-import { TaskCard } from '@/components/TaskCard';
-import { TaskModal } from '@/components/TaskModal';
-import { PaaSArchitectureModal } from '@/components/PaaSArchitectureModal';
-import { ImagePreviewModal } from '@/components/ImagePreviewModal';
-import { Task, TaskPriority, TaskStatus, PaaSStatus } from '@/lib/types';
-import { initialMockTasks } from '@/lib/mockData';
+import { Hero } from '@/components/Hero';
+import { ShowcaseCard } from '@/components/ShowcaseCard';
+import { ShowcaseModal } from '@/components/ShowcaseModal';
+import { ShowcaseDetailModal } from '@/components/ShowcaseDetailModal';
+import { Showcase } from '@/lib/types';
+import { initialShowcases } from '@/lib/mockData';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
-import {
-  Search,
-  Filter,
-  CheckCircle2,
-  Clock,
-  AlertTriangle,
-  FolderOpen,
-  Plus,
-  Server,
-  Cloud,
-  Database,
-  RefreshCw,
-  Sparkles,
-} from 'lucide-react';
+import { Sparkles, Plus, Compass } from 'lucide-react';
 
 export default function Home() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [showcases, setShowcases] = useState<Showcase[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [paasStatuses, setPaasStatuses] = useState<PaaSStatus[]>([]);
-  const [isRefreshingPaaS, setIsRefreshingPaaS] = useState(false);
-
-  // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
   // Modals
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [isArchitectureModalOpen, setIsArchitectureModalOpen] = useState(false);
-  const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
+  const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
+  const [selectedShowcase, setSelectedShowcase] = useState<Showcase | null>(null);
 
-  // 1. Fetch PaaS Health Status
-  const fetchPaaSStatus = async () => {
-    setIsRefreshingPaaS(true);
-    try {
-      const res = await fetch('/api/paas-check');
-      if (res.ok) {
-        const data = await res.json();
-        setPaasStatuses(data.services || []);
-      }
-    } catch (err) {
-      console.error('Failed to fetch PaaS status', err);
-    } finally {
-      setIsRefreshingPaaS(false);
-    }
-  };
-
-  // 2. Fetch Tasks from Supabase or Local Fallback
-  const fetchTasks = async () => {
+  // 1. Fetch Showcases from Supabase or Fallback
+  const fetchShowcases = async () => {
     setIsLoading(true);
+
     if (isSupabaseConfigured() && supabase) {
       try {
         const { data, error } = await supabase
-          .from('tasks')
+          .from('posts')
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
-        if (data && data.length > 0) {
-          setTasks(data as Task[]);
+        if (!error && data && data.length > 0) {
+          setShowcases(data as Showcase[]);
           setIsLoading(false);
           return;
         }
       } catch (err) {
-        console.warn('Supabase fetch failed, loading local fallback:', err);
+        console.warn('Supabase posts fetch failed, falling back to local:', err);
       }
     }
 
-    // Local fallback from localStorage or mock data
+    // Local storage or initial mock showcases
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('studytrack_tasks');
+      const saved = localStorage.getItem('inspira_showcases');
       if (saved) {
         try {
-          setTasks(JSON.parse(saved));
+          setShowcases(JSON.parse(saved));
           setIsLoading(false);
           return;
-        } catch {
-          // fallback to initial
-        }
+        } catch {}
       }
     }
-    setTasks(initialMockTasks);
+
+    setShowcases(initialShowcases);
     setIsLoading(false);
   };
 
   useEffect(() => {
-    fetchPaaSStatus();
-    fetchTasks();
+    fetchShowcases();
   }, []);
 
-  // Save to localStorage whenever tasks change in demo/fallback mode
+  // Save to localStorage when updated
   useEffect(() => {
-    if (!isSupabaseConfigured() && typeof window !== 'undefined' && tasks.length > 0) {
-      localStorage.setItem('studytrack_tasks', JSON.stringify(tasks));
+    if (typeof window !== 'undefined' && showcases.length > 0) {
+      localStorage.setItem('inspira_showcases', JSON.stringify(showcases));
     }
-  }, [tasks]);
+  }, [showcases]);
 
-  // 3. Handlers for CRUD operations
-  const handleAddTask = async (newTaskData: Omit<Task, 'id' | 'created_at'>) => {
+  // 2. Add New Showcase
+  const handleAddShowcase = async (newShowcaseData: Omit<Showcase, 'id' | 'likes' | 'created_at'>) => {
+    const newShowcase: Showcase = {
+      ...newShowcaseData,
+      id: 'post_' + Date.now(),
+      likes: 1,
+      created_at: new Date().toISOString(),
+    };
+
     if (isSupabaseConfigured() && supabase) {
       try {
         const { data, error } = await supabase
-          .from('tasks')
-          .insert([newTaskData])
+          .from('posts')
+          .insert([{
+            title: newShowcaseData.title,
+            category: newShowcaseData.category,
+            author: newShowcaseData.author,
+            author_avatar: newShowcaseData.author_avatar,
+            description: newShowcaseData.description,
+            image_url: newShowcaseData.image_url,
+            likes: 1,
+          }])
           .select()
           .single();
 
-        if (error) throw error;
-        if (data) {
-          setTasks((prev) => [data as Task, ...prev]);
+        if (!error && data) {
+          setShowcases((prev) => [data as Showcase, ...prev]);
           return;
         }
       } catch (err) {
@@ -127,250 +103,97 @@ export default function Home() {
       }
     }
 
-    // Local fallback
-    const localNewTask: Task = {
-      ...newTaskData,
-      id: 'task_' + Date.now(),
-      created_at: new Date().toISOString(),
-    };
-    setTasks((prev) => [localNewTask, ...prev]);
+    setShowcases((prev) => [newShowcase, ...prev]);
   };
 
-  const handleUpdateStatus = async (id: string, newStatus: TaskStatus) => {
-    // Optimistic UI update
-    setTasks((prev) =>
-      prev.map((task) => (task.id === id ? { ...task, status: newStatus } : task))
+  // 3. Like a Showcase
+  const handleLike = async (id: string) => {
+    setShowcases((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, likes: item.likes + 1 } : item))
     );
 
+    if (selectedShowcase && selectedShowcase.id === id) {
+      setSelectedShowcase((prev) => prev ? { ...prev, likes: prev.likes + 1 } : null);
+    }
+
     if (isSupabaseConfigured() && supabase) {
       try {
-        await supabase.from('tasks').update({ status: newStatus }).eq('id', id);
+        const current = showcases.find((s) => s.id === id);
+        if (current) {
+          await supabase
+            .from('posts')
+            .update({ likes: current.likes + 1 })
+            .eq('id', id);
+        }
       } catch (err) {
-        console.error('Failed to update status in Supabase:', err);
+        console.warn('Supabase like update failed:', err);
       }
     }
   };
 
-  const handleDeleteTask = async (id: string) => {
-    setTasks((prev) => prev.filter((task) => task.id !== id));
-
-    if (isSupabaseConfigured() && supabase) {
-      try {
-        await supabase.from('tasks').delete().eq('id', id);
-      } catch (err) {
-        console.error('Failed to delete in Supabase:', err);
-      }
-    }
-  };
-
-  // Filter and Search Logic
-  const filteredTasks = tasks.filter((task) => {
+  // Filtering Logic
+  const filteredShowcases = showcases.filter((item) => {
+    const matchesCategory = selectedCategory === 'All' || item.category.toLowerCase() === selectedCategory.toLowerCase();
     const matchesSearch =
-      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.course.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
-    const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
-
-    return matchesSearch && matchesStatus && matchesPriority;
+    return matchesCategory && matchesSearch;
   });
-
-  // Summary Metrics
-  const totalTasks = tasks.length;
-  const pendingTasks = tasks.filter((t) => t.status !== 'completed').length;
-  const completedTasks = tasks.filter((t) => t.status === 'completed').length;
-  const attachmentCount = tasks.filter((t) => t.attachment_url).length;
-
-  const isAllHealthy = paasStatuses.every((s) => s.connected);
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Top Navbar */}
+      {/* Navbar */}
       <Navbar
-        onOpenNewTask={() => setIsTaskModalOpen(true)}
-        onOpenArchitecture={() => setIsArchitectureModalOpen(true)}
-        paasHealth={isAllHealthy}
+        onOpenSubmit={() => setIsSubmitModalOpen(true)}
+        selectedCategory={selectedCategory}
+        onSelectCategory={setSelectedCategory}
       />
 
-      {/* Main Container */}
-      <main className="container" style={{ flex: 1, padding: '2.5rem 1.5rem' }}>
-        {/* PaaS Status & Multi-Cloud Banner */}
-        <PaaSStatusBanner
-          statuses={paasStatuses}
-          onOpenDetails={() => setIsArchitectureModalOpen(true)}
+      {/* Main Content */}
+      <main className="container" style={{ flex: 1, paddingBottom: '5rem' }}>
+        {/* Hero Banner */}
+        <Hero
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
         />
 
-        {/* Metrics Overview Row */}
-        <section style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '1rem',
-          marginBottom: '2.5rem',
-        }}>
-          <div className="glass-panel" style={{ padding: '1.25rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Total Tugas</span>
-              <FolderOpen size={18} color="#818cf8" />
-            </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0.35rem' }}>
-              {totalTasks}
-            </div>
-          </div>
-
-          <div className="glass-panel" style={{ padding: '1.25rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Perlu Dikerjakan</span>
-              <Clock size={18} color="#f59e0b" />
-            </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0.35rem', color: '#fcd34d' }}>
-              {pendingTasks}
-            </div>
-          </div>
-
-          <div className="glass-panel" style={{ padding: '1.25rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Selesai</span>
-              <CheckCircle2 size={18} color="#10b981" />
-            </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0.35rem', color: '#6ee7b7' }}>
-              {completedTasks}
-            </div>
-          </div>
-
-          <div className="glass-panel" style={{ padding: '1.25rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Cloudinary Media</span>
-              <Cloud size={18} color="#38bdf8" />
-            </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0.35rem', color: '#38bdf8' }}>
-              {attachmentCount}
-            </div>
-          </div>
-        </section>
-
-        {/* Filter and Search Bar */}
-        <section style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '1rem',
-          marginBottom: '1.5rem',
-        }}>
-          {/* Search Box */}
-          <div style={{
-            position: 'relative',
-            flex: '1 1 300px',
-            maxWidth: '450px',
-          }}>
-            <Search
-              size={16}
-              color="#94a3b8"
-              style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }}
-            />
-            <input
-              type="text"
-              placeholder="Cari tugas, mata kuliah, atau topik..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.65rem 1rem 0.65rem 2.5rem',
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.85rem',
-              }}
-            />
-          </div>
-
-          {/* Filters */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              style={{
-                padding: '0.65rem 0.9rem',
-                background: '#151c2e',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.82rem',
-              }}
-            >
-              <option value="all">Semua Status</option>
-              <option value="todo">To Do</option>
-              <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
-
-            <select
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
-              style={{
-                padding: '0.65rem 0.9rem',
-                background: '#151c2e',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.82rem',
-              }}
-            >
-              <option value="all">Semua Prioritas</option>
-              <option value="urgent">Mendesak (Urgent)</option>
-              <option value="high">Tinggi (High)</option>
-              <option value="medium">Sedang (Medium)</option>
-              <option value="low">Rendah (Low)</option>
-            </select>
-
-            <button
-              onClick={() => {
-                fetchTasks();
-                fetchPaaSStatus();
-              }}
-              className="btn btn-secondary btn-icon"
-              title="Refresh Data & PaaS Status"
-              disabled={isLoading || isRefreshingPaaS}
-            >
-              <RefreshCw size={16} className={isLoading || isRefreshingPaaS ? 'animate-pulse' : ''} />
-            </button>
-          </div>
-        </section>
-
-        {/* Task Grid */}
-        <section>
-          {filteredTasks.length === 0 ? (
+        {/* Gallery Grid */}
+        <section style={{ marginTop: '1.5rem' }}>
+          {filteredShowcases.length === 0 ? (
             <div className="glass-panel" style={{
               textAlign: 'center',
-              padding: '4rem 1.5rem',
+              padding: '5rem 2rem',
               borderRadius: 'var(--radius-lg)',
             }}>
-              <FolderOpen size={48} color="#64748b" style={{ margin: '0 auto 1rem' }} />
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-                Tidak ada tugas yang ditemukan
+              <Compass size={48} color="#64748b" style={{ margin: '0 auto 1.25rem' }} />
+              <h3 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                No creations found
               </h3>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-                {searchQuery || statusFilter !== 'all' || priorityFilter !== 'all'
-                  ? 'Coba sesuaikan kata kunci pencarian atau reset filter di atas.'
-                  : 'Belum ada tugas kuliah yang terdaftar. Tambahkan tugas pertama Anda!'}
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.75rem' }}>
+                {searchQuery || selectedCategory !== 'All'
+                  ? 'Try selecting another category or refining your search term.'
+                  : 'Be the first creator to publish an inspiring piece to this gallery.'}
               </p>
-              <button onClick={() => setIsTaskModalOpen(true)} className="btn btn-primary">
+              <button
+                onClick={() => setIsSubmitModalOpen(true)}
+                className="btn btn-primary"
+              >
                 <Plus size={16} />
-                <span>Tambah Tugas Pertama</span>
+                <span>Submit First Work</span>
               </button>
             </div>
           ) : (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-              gap: '1.25rem',
-            }}>
-              {filteredTasks.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  onUpdateStatus={handleUpdateStatus}
-                  onDelete={handleDeleteTask}
-                  onPreviewImage={(url, name) => setPreviewImage({ url, name })}
+            <div className="gallery-grid">
+              {filteredShowcases.map((showcase) => (
+                <ShowcaseCard
+                  key={showcase.id}
+                  showcase={showcase}
+                  onLike={handleLike}
+                  onClick={(item) => setSelectedShowcase(item)}
                 />
               ))}
             </div>
@@ -378,83 +201,69 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Footer */}
+      {/* Elegant Footer */}
       <footer style={{
         borderTop: '1px solid var(--border-subtle)',
-        background: 'rgba(10, 13, 20, 0.95)',
-        padding: '2rem 0',
-        marginTop: '4rem',
+        background: '#07080c',
+        padding: '3rem 0 2.5rem',
       }}>
         <div className="container" style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '1rem',
-          fontSize: '0.82rem',
+          gap: '1.5rem',
+          fontSize: '0.85rem',
           color: 'var(--text-muted)',
         }}>
-          <div>
-            <p>
-              <strong>StudyTrack PaaS</strong> — Multi-Cloud Architecture Task &amp; Study Hub
-            </p>
-            <p style={{ marginTop: '0.25rem', fontSize: '0.75rem' }}>
-              Hosting by <strong>Vercel</strong> • Database by <strong>Supabase</strong> • Storage by <strong>Cloudinary</strong>
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <div style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '8px',
+              background: 'var(--accent-gradient)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <Sparkles size={14} color="#ffffff" />
+            </div>
+            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff' }}>
+              Inspira<span style={{ color: '#a855f7' }}>.</span>
+            </span>
+            <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              Curated Visual &amp; Design Showcase
+            </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-            <button
-              onClick={() => setIsArchitectureModalOpen(true)}
-              style={{ color: '#818cf8', fontSize: '0.82rem', fontWeight: 600 }}
-            >
-              Panduan Arsitektur &amp; Deploy
-            </button>
-            <span>•</span>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+            <a href="#" style={{ color: 'var(--text-secondary)' }}>Explore</a>
+            <a href="#" style={{ color: 'var(--text-secondary)' }}>Privacy</a>
+            <a href="#" style={{ color: 'var(--text-secondary)' }}>Terms</a>
             <a
-              href="https://vercel.com"
+              href="https://github.com/24gazaly/studytrack-paas"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: 'var(--text-secondary)' }}
+              style={{ color: '#a5b4fc', fontWeight: 600 }}
             >
-              Vercel Docs
-            </a>
-            <a
-              href="https://supabase.com/docs"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              Supabase Docs
-            </a>
-            <a
-              href="https://cloudinary.com/documentation"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              Cloudinary Docs
+              GitHub
             </a>
           </div>
         </div>
       </footer>
 
       {/* Modals */}
-      <TaskModal
-        isOpen={isTaskModalOpen}
-        onClose={() => setIsTaskModalOpen(false)}
-        onAddTask={handleAddTask}
+      <ShowcaseModal
+        isOpen={isSubmitModalOpen}
+        onClose={() => setIsSubmitModalOpen(false)}
+        onSubmit={handleAddShowcase}
       />
 
-      <PaaSArchitectureModal
-        isOpen={isArchitectureModalOpen}
-        onClose={() => setIsArchitectureModalOpen(false)}
-      />
-
-      <ImagePreviewModal
-        isOpen={Boolean(previewImage)}
-        onClose={() => setPreviewImage(null)}
-        imageUrl={previewImage?.url || null}
-        imageName={previewImage?.name || ''}
+      <ShowcaseDetailModal
+        isOpen={Boolean(selectedShowcase)}
+        onClose={() => setSelectedShowcase(null)}
+        showcase={selectedShowcase}
+        onLike={handleLike}
       />
     </div>
   );

@@ -1,81 +1,66 @@
 -- =================================================================
--- StudyTrack PaaS - Supabase Database Schema & Seed Data
+-- Inspira Creative Showcase - Database Schema & Seed Data
 -- =================================================================
--- Run this SQL in your Supabase Dashboard:
--- 1. Login to https://supabase.com
--- 2. Go to your Project -> SQL Editor -> New Query
--- 3. Paste this script and click "Run"
+-- Run this SQL in your Supabase SQL Editor:
+-- https://supabase.com -> Project -> SQL Editor -> Run
 -- =================================================================
 
--- 1. Create Tasks Table
-create table if not exists public.tasks (
+create table if not exists public.posts (
     id uuid default gen_random_uuid() primary key,
     title text not null,
-    course text not null,
+    category text not null,
+    author text default 'Guest Creator',
+    author_avatar text,
     description text,
-    deadline timestamptz,
-    priority text default 'medium' check (priority in ('low', 'medium', 'high', 'urgent')),
-    status text default 'todo' check (status in ('todo', 'in_progress', 'completed')),
-    attachment_url text,
-    attachment_name text,
+    image_url text not null,
+    likes integer default 0,
     created_at timestamptz default now() not null
 );
 
--- 2. Enable Row Level Security (RLS)
-alter table public.tasks enable row level security;
+alter table public.posts enable row level security;
 
--- 3. Create Public Policies (Allows read, insert, update, delete for demo/anon users)
-create policy "Allow anonymous read tasks" 
-on public.tasks for select 
+create policy "Allow public access to posts" 
+on public.posts for all 
 to anon, authenticated 
-using (true);
-
-create policy "Allow anonymous insert tasks" 
-on public.tasks for insert 
-to anon, authenticated 
+using (true) 
 with check (true);
 
-create policy "Allow anonymous update tasks" 
-on public.tasks for update 
-to anon, authenticated 
-using (true)
-with check (true);
-
-create policy "Allow anonymous delete tasks" 
-on public.tasks for delete 
-to anon, authenticated 
-using (true);
-
--- 4. Seed Initial Sample Data
-insert into public.tasks (title, course, description, deadline, priority, status, attachment_url, attachment_name)
+-- Initial seed showcases
+insert into public.posts (title, category, author, author_avatar, description, image_url, likes)
 values 
 (
-    'Implementasi PaaS Vercel & Supabase',
-    'Cloud Computing',
-    'Menyiapkan arsitektur web berbasis PaaS menggunakan Next.js di Vercel dan PostgreSQL di Supabase.',
-    now() + interval '3 days',
-    'urgent',
-    'in_progress',
-    'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200&auto=format&fit=crop',
-    'cloud-architecture-diagram.jpg'
+    'Minimalist Nordic Pavilion',
+    'Architecture',
+    'Elena Rostova',
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+    'A study on natural timber reflections and diffuse daylighting in contemporary Scandinavian pavilions.',
+    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&auto=format&fit=crop&q=80',
+    142
 ),
 (
-    'Konfigurasi Cloudinary CDN & Unsigned Preset',
-    'Web Architecture',
-    'Membuat storage bucket di Cloudinary untuk upload attachment dokumen dan kompresi media real-time.',
-    now() + interval '5 days',
-    'high',
-    'completed',
-    'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop',
-    'cloudinary-cdn-preview.png'
+    'Cyberpunk Neon Rain',
+    'Photography',
+    'Kenji Sato',
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
+    'Shinjuku alleyways during a heavy monsoon evening, capturing reflections on asphalt.',
+    'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1200&auto=format&fit=crop&q=80',
+    289
 ),
 (
-    'Rangkuman Bab 4: Database As A Service (DBaaS)',
-    'Sistem Basis Data',
-    'Membuat rangkuman perbandingan relasional database serverless vs managed cloud instances.',
-    now() + interval '7 days',
-    'medium',
-    'todo',
-    null,
-    null
+    'Kinetic Flow Mobile App Concept',
+    'UI/UX Design',
+    'Sarah Chen',
+    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80',
+    'Experimental gestural navigation system designed for next-generation spatial computing interfaces.',
+    'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&auto=format&fit=crop&q=80',
+    195
+),
+(
+    'Iridescent Glass Sculptures',
+    '3D Art',
+    'Marcus Vance',
+    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80',
+    'Procedural refraction simulations rendered using spectral dispersion shaders in Octane.',
+    'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80',
+    310
 );

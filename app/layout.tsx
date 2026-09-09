@@ -2,9 +2,8 @@ import type { Metadata } from 'next';
 import '../styles/globals.css';
 
 export const metadata: Metadata = {
-  title: 'StudyTrack — PaaS Integrated Student Study Hub',
-  description: 'A modern cloud-native student task and study management hub powered by Vercel, Supabase, and Cloudinary.',
-  keywords: ['PaaS', 'Vercel', 'Supabase', 'Cloudinary', 'Next.js', 'PostgreSQL', 'Cloud Storage'],
+  title: 'Inspira — Curated Visual & Design Showcase',
+  description: 'A contemporary digital showcase platform where creators publish and discover inspiring architecture, photography, 3D art, and digital concepts.',
 };
 
 export default function RootLayout({
@@ -13,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id">
+    <html lang="en">
       <body>
         {children}
       </body>
