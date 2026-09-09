@@ -1,5 +1,5 @@
-const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || '';
-const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || '';
+const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'pervy9rr';
+const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'studytrack_preset';
 
 export const isCloudinaryConfigured = (): boolean => {
   return (
@@ -21,10 +21,8 @@ export interface UploadResult {
 
 /**
  * Uploads a file to Cloudinary Storage PaaS using Unsigned Upload API.
- * Falls back to local object URL if Cloudinary credentials are not set.
  */
 export async function uploadToCloudinary(file: File): Promise<UploadResult> {
-  // If credentials are valid, upload to live Cloudinary endpoint
   if (isCloudinaryConfigured()) {
     const formData = new FormData();
     formData.append('file', file);
@@ -55,7 +53,7 @@ export async function uploadToCloudinary(file: File): Promise<UploadResult> {
     };
   }
 
-  // Fallback for immediate testing before keys are added
+  // Fallback for immediate preview if unconfigured
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = () => {

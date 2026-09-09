@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { initialShowcases } from '@/lib/mockData';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/posts - Fetch all posts from Supabase with server-level reliability
 export async function GET() {
   if (isSupabaseConfigured() && supabase) {
