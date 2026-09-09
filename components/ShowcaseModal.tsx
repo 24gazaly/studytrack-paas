@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { X, Upload, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Upload, AlertCircle, Loader2, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
 import { Showcase } from '@/lib/types';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 
@@ -21,8 +21,12 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
   const [author, setAuthor] = useState('');
   const [description, setDescription] = useState('');
 
-  // Image Upload state
+  // Image state - support both file upload and direct URL
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageInputMode, setImageInputMode] = useState<'upload' | 'url'>('upload');
+  const [urlInput, setUrlInput] = useState('');
+  const [urlError, setUrlError] = useState<string | null>(null);
+
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,10 +46,27 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
       const result = await uploadToCloudinary(file);
       setImageUrl(result.url);
     } catch (err: any) {
-      setUploadError(err?.message || 'Failed to upload artwork.');
+      // If Cloudinary fails, read file as local blob URL for preview only
+      const localUrl = URL.createObjectURL(file);
+      setImageUrl(localUrl);
+      setUploadError('Cloudinary not configured — using local preview. Image may not persist after refresh.');
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handleUrlSubmit = () => {
+    const trimmed = urlInput.trim();
+    if (!trimmed) {
+      setUrlError('Please enter a valid image URL.');
+      return;
+    }
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+      setUrlError('URL must start with http:// or https://');
+      return;
+    }
+    setUrlError(null);
+    setImageUrl(trimmed);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -58,17 +79,20 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
         title: title.trim(),
         category,
         author: author.trim() || 'Guest Creator',
-        author_avatar: `https://images.unsplash.com/photo-${1534528741775 + Math.floor(Math.random() * 50)}?w=100&auto=format&fit=crop&q=80`,
+        author_avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(author.trim() || 'Guest')}&background=1e40af&color=fff&size=100`,
         description: description.trim() || undefined,
         image_url: imageUrl,
       });
 
-      // Reset
+      // Reset form
       setTitle('');
       setCategory('Architecture');
       setAuthor('');
       setDescription('');
       setImageUrl(null);
+      setUrlInput('');
+      setUploadError(null);
+      setUrlError(null);
       onClose();
     } catch (err: any) {
       alert('Error saving showcase: ' + (err?.message || 'Unknown error'));
@@ -77,11 +101,23 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
     }
   };
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '0.75rem 1rem',
+    background: 'rgba(255, 255, 255, 0.04)',
+    border: '1px solid var(--border-subtle)',
+    borderRadius: 'var(--radius-sm)',
+    fontSize: '0.88rem',
+    color: '#ffffff',
+    outline: 'none',
+    boxSizing: 'border-box',
+  };
+
   return (
     <div style={{
       position: 'fixed',
       inset: 0,
-      background: 'rgba(0, 0, 0, 0.8)',
+      background: 'rgba(0, 0, 0, 0.85)',
       backdropFilter: 'blur(8px)',
       display: 'flex',
       alignItems: 'center',
@@ -110,7 +146,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
           <div>
             <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Submit Your Work</h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-              Add a new creative project to the directory.
+              Add a new creative project to the gallery.
             </p>
           </div>
           <button
@@ -124,91 +160,180 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
-          {/* Image Upload Area */}
+
+          {/* Image Section */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.45rem' }}>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.5rem' }}>
               Project Image *
             </label>
 
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept="image/*"
-              style={{ display: 'none' }}
-              id="artwork-file-input"
-            />
-
-            {!imageUrl && !isUploading && (
-              <label
-                htmlFor="artwork-file-input"
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '2.25rem 1.5rem',
-                  border: '2px dashed var(--border-subtle)',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  textAlign: 'center',
-                }}
-              >
-                <div style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '8px',
-                  background: 'rgba(37, 99, 235, 0.12)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '0.75rem',
-                }}>
-                  <Upload size={20} color="#60a5fa" />
-                </div>
-                <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#ffffff' }}>
-                  Click to select high-res image
-                </span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                  Supports PNG, JPG, WebP
-                </span>
-              </label>
-            )}
-
-            {isUploading && (
+            {/* Toggle: Upload vs URL */}
+            {!imageUrl && (
               <div style={{
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.65rem',
-                padding: '2.25rem 1.5rem',
-                background: 'rgba(37, 99, 235, 0.08)',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid rgba(37, 99, 235, 0.25)',
-                color: '#93c5fd',
-                fontSize: '0.85rem',
+                gap: '0.5rem',
+                marginBottom: '0.75rem',
               }}>
-                <Loader2 size={18} className="animate-spin" />
-                <span>Uploading image to media CDN...</span>
+                <button
+                  type="button"
+                  onClick={() => setImageInputMode('upload')}
+                  style={{
+                    flex: 1,
+                    padding: '0.5rem',
+                    borderRadius: 'var(--radius-sm)',
+                    border: `1px solid ${imageInputMode === 'upload' ? 'rgba(37, 99, 235, 0.6)' : 'var(--border-subtle)'}`,
+                    background: imageInputMode === 'upload' ? 'rgba(37, 99, 235, 0.12)' : 'rgba(255,255,255,0.03)',
+                    color: imageInputMode === 'upload' ? '#60a5fa' : 'var(--text-secondary)',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.35rem',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <Upload size={13} /> Upload File
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageInputMode('url')}
+                  style={{
+                    flex: 1,
+                    padding: '0.5rem',
+                    borderRadius: 'var(--radius-sm)',
+                    border: `1px solid ${imageInputMode === 'url' ? 'rgba(37, 99, 235, 0.6)' : 'var(--border-subtle)'}`,
+                    background: imageInputMode === 'url' ? 'rgba(37, 99, 235, 0.12)' : 'rgba(255,255,255,0.03)',
+                    color: imageInputMode === 'url' ? '#60a5fa' : 'var(--text-secondary)',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.35rem',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <LinkIcon size={13} /> Paste URL
+                </button>
               </div>
             )}
 
+            {/* Upload Mode */}
+            {imageInputMode === 'upload' && !imageUrl && (
+              <>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  id="artwork-file-input"
+                />
+                {!isUploading ? (
+                  <label
+                    htmlFor="artwork-file-input"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '2.25rem 1.5rem',
+                      border: '2px dashed var(--border-subtle)',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <div style={{
+                      width: '44px', height: '44px',
+                      borderRadius: '8px',
+                      background: 'rgba(37, 99, 235, 0.12)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      marginBottom: '0.75rem',
+                    }}>
+                      <Upload size={20} color="#60a5fa" />
+                    </div>
+                    <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#ffffff' }}>
+                      Click to select image
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                      PNG, JPG, WebP · or use "Paste URL" above
+                    </span>
+                  </label>
+                ) : (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    gap: '0.65rem',
+                    padding: '2.25rem 1.5rem',
+                    background: 'rgba(37, 99, 235, 0.08)',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid rgba(37, 99, 235, 0.25)',
+                    color: '#93c5fd', fontSize: '0.85rem',
+                  }}>
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>Uploading to media CDN...</span>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* URL Mode */}
+            {imageInputMode === 'url' && !imageUrl && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input
+                    type="url"
+                    placeholder="https://images.unsplash.com/photo-..."
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleUrlSubmit())}
+                    style={{ ...inputStyle, flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleUrlSubmit}
+                    style={{
+                      padding: '0.75rem 1rem',
+                      background: 'rgba(37, 99, 235, 0.8)',
+                      border: 'none',
+                      borderRadius: 'var(--radius-sm)',
+                      color: '#fff',
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Use URL
+                  </button>
+                </div>
+                {urlError && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#f43f5e', fontSize: '0.75rem' }}>
+                    <AlertCircle size={13} /> {urlError}
+                  </div>
+                )}
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  Tip: Copy any image URL from Unsplash, Pinterest, etc.
+                </p>
+              </div>
+            )}
+
+            {/* Error */}
             {uploadError && (
               <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                color: '#f43f5e',
-                fontSize: '0.75rem',
-                marginTop: '0.5rem',
+                display: 'flex', alignItems: 'center', gap: '0.4rem',
+                color: '#fbbf24', fontSize: '0.75rem', marginTop: '0.5rem',
               }}>
                 <AlertCircle size={14} />
                 <span>{uploadError}</span>
               </div>
             )}
 
+            {/* Preview */}
             {imageUrl && (
               <div style={{
                 position: 'relative',
@@ -221,14 +346,16 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                   src={imageUrl}
                   alt="Upload preview"
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={() => {
+                    setUrlError('Could not load image from that URL. Try another one.');
+                    setImageUrl(null);
+                  }}
                 />
                 <button
                   type="button"
-                  onClick={() => setImageUrl(null)}
+                  onClick={() => { setImageUrl(null); setUrlInput(''); setUploadError(null); }}
                   style={{
-                    position: 'absolute',
-                    top: '0.65rem',
-                    right: '0.65rem',
+                    position: 'absolute', top: '0.65rem', right: '0.65rem',
                     background: 'rgba(0, 0, 0, 0.75)',
                     color: '#ffffff',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
@@ -236,6 +363,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                     borderRadius: 'var(--radius-sm)',
                     fontSize: '0.75rem',
                     fontWeight: 600,
+                    cursor: 'pointer',
                   }}
                 >
                   Change
@@ -255,15 +383,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
               placeholder="e.g. Modern Coastal Residence"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.75rem 1rem',
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.88rem',
-                color: '#ffffff',
-              }}
+              style={inputStyle}
             />
           </div>
 
@@ -277,13 +397,8 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem',
+                  ...inputStyle,
                   background: '#1e293b',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.88rem',
-                  color: '#ffffff',
                 }}
               >
                 <option value="Architecture">Architecture</option>
@@ -291,6 +406,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                 <option value="UI/UX Design">UI/UX Design</option>
                 <option value="3D Art">3D Art</option>
                 <option value="Branding">Branding</option>
+                <option value="Illustration">Illustration</option>
               </select>
             </div>
 
@@ -303,15 +419,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                 placeholder="e.g. Studio Minimal"
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem',
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.88rem',
-                  color: '#ffffff',
-                }}
+                style={inputStyle}
               />
             </div>
           </div>
@@ -327,13 +435,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               style={{
-                width: '100%',
-                padding: '0.75rem 1rem',
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.88rem',
-                color: '#ffffff',
+                ...inputStyle,
                 resize: 'vertical',
               }}
             />
@@ -358,12 +460,12 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={isSubmitting || isUploading || !imageUrl}
+              disabled={isSubmitting || isUploading || !imageUrl || !title.trim()}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
-                  <span>Saving...</span>
+                  <span>Publishing...</span>
                 </>
               ) : (
                 <span>Publish Project</span>

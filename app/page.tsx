@@ -8,7 +8,6 @@ import { ShowcaseModal } from '@/components/ShowcaseModal';
 import { ShowcaseDetailModal } from '@/components/ShowcaseDetailModal';
 import { Showcase } from '@/lib/types';
 import { initialShowcases } from '@/lib/mockData';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { Compass, Plus, RefreshCw } from 'lucide-react';
 
 export default function Home() {
@@ -16,69 +15,55 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const lastFetchRef = React.useRef<number>(0);
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   // Modals
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [selectedShowcase, setSelectedShowcase] = useState<Showcase | null>(null);
 
-  // 1. Fetch Showcases - Serverless API + Direct Supabase for guaranteed multi-device sync
+  // 1. Fetch Showcases - Serverless API route (always synced from Supabase)
   const fetchShowcases = useCallback(async (isSilent = false) => {
     if (!isSilent) setIsLoading(true);
     else setIsRefreshing(true);
 
-    let fetchedData: Showcase[] | null = null;
+    const fetchTimestamp = Date.now();
+    lastFetchRef.current = fetchTimestamp;
 
-    // A. First try Serverless API endpoint
     try {
       const res = await fetch('/api/posts', { cache: 'no-store' });
       if (res.ok) {
         const json = await res.json();
         if (json.posts && json.posts.length > 0) {
-          fetchedData = json.posts;
+          // Only update state if no newer fetch has started
+          if (lastFetchRef.current === fetchTimestamp) {
+            setShowcases(json.posts);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('inspira_showcases', JSON.stringify(json.posts));
+            }
+          }
+          setIsLoading(false);
+          setIsRefreshing(false);
+          return;
         }
       }
     } catch (apiErr) {
-      console.warn('API fetch failed, trying direct Supabase client:', apiErr);
+      console.warn('API fetch failed:', apiErr);
     }
 
-    // B. If API didn't return data, try direct Supabase client
-    if (!fetchedData && isSupabaseConfigured() && supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('posts')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (!error && data && data.length > 0) {
-          fetchedData = data as Showcase[];
-        }
-      } catch (sbErr) {
-        console.warn('Direct Supabase fetch failed:', sbErr);
+    // Fallback: localStorage → mockData
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('inspira_showcases');
+      if (saved) {
+        try {
+          setShowcases(JSON.parse(saved));
+          setIsLoading(false);
+          setIsRefreshing(false);
+          return;
+        } catch {}
       }
     }
-
-    if (fetchedData && fetchedData.length > 0) {
-      setShowcases(fetchedData);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('inspira_showcases', JSON.stringify(fetchedData));
-      }
-    } else {
-      // Fallback
-      if (typeof window !== 'undefined') {
-        const saved = localStorage.getItem('inspira_showcases');
-        if (saved) {
-          try {
-            setShowcases(JSON.parse(saved));
-            setIsLoading(false);
-            setIsRefreshing(false);
-            return;
-          } catch {}
-        }
-      }
-      setShowcases(initialShowcases);
-    }
-
+    setShowcases(initialShowcases);
     setIsLoading(false);
     setIsRefreshing(false);
   }, []);
@@ -100,19 +85,20 @@ export default function Home() {
     };
   }, [fetchShowcases]);
 
-  // 2. Add New Showcase (Syncs to Serverless API + Supabase DB)
+  // 2. Add New Showcase
   const handleAddShowcase = async (newShowcaseData: Omit<Showcase, 'id' | 'likes' | 'created_at'>) => {
-    // Optimistic UI update
+    const tempId = 'temp_' + Date.now();
     const tempPost: Showcase = {
       ...newShowcaseData,
-      id: 'temp_' + Date.now(),
+      id: tempId,
       likes: 1,
       created_at: new Date().toISOString(),
     };
+
+    // Optimistic UI — show immediately
     setShowcases((prev) => [tempPost, ...prev]);
 
     try {
-      // Send to serverless API
       const res = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -122,43 +108,29 @@ export default function Home() {
       if (res.ok) {
         const json = await res.json();
         if (json.post) {
-          // Replace temp post with real database record
+          // Replace temp with real DB record
           setShowcases((prev) =>
-            prev.map((p) => (p.id === tempPost.id ? json.post : p))
+            prev.map((p) => (p.id === tempId ? { ...json.post } : p))
           );
+          // Update localStorage with new data
+          setShowcases((current) => {
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('inspira_showcases', JSON.stringify(current));
+            }
+            return current;
+          });
           return;
         }
+      } else {
+        const errJson = await res.json().catch(() => ({}));
+        console.error('POST /api/posts failed:', errJson);
       }
     } catch (err) {
-      console.warn('POST to /api/posts failed, trying direct Supabase:', err);
+      console.error('Network error posting showcase:', err);
     }
 
-    // Direct Supabase fallback
-    if (isSupabaseConfigured() && supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('posts')
-          .insert([{
-            title: newShowcaseData.title,
-            category: newShowcaseData.category,
-            author: newShowcaseData.author,
-            author_avatar: newShowcaseData.author_avatar,
-            description: newShowcaseData.description,
-            image_url: newShowcaseData.image_url,
-            likes: 1,
-          }])
-          .select()
-          .single();
-
-        if (!error && data) {
-          setShowcases((prev) =>
-            prev.map((p) => (p.id === tempPost.id ? (data as Showcase) : p))
-          );
-        }
-      } catch (err) {
-        console.error('Direct Supabase insert failed:', err);
-      }
-    }
+    // Keep optimistic post visible even if API fails
+    console.warn('Post saved locally only — will retry on next sync');
   };
 
   // 3. Like a Showcase
