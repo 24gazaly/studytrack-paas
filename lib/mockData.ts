@@ -1,0 +1,52 @@
+import { Task } from './types';
+
+export const initialMockTasks: Task[] = [
+  {
+    id: '1',
+    title: 'Arsitektur PaaS (Vercel + Supabase + Cloudinary)',
+    course: 'Komputasi Awan',
+    description: 'Menyusun dokumentasi dan diagram alur platform as a service untuk deployment aplikasi web modern.',
+    deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    priority: 'urgent',
+    status: 'in_progress',
+    attachment_url: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=1200&auto=format&fit=crop',
+    attachment_name: 'cloud-server-diagram.jpg',
+    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: '2',
+    title: 'Konfigurasi Cloudinary Unsigned Upload Preset',
+    course: 'Teknologi Web Modern',
+    description: 'Mengatur storage bucket di dashboard Cloudinary agar file upload mahasiswa terkompresi otomatis.',
+    deadline: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
+    priority: 'high',
+    status: 'completed',
+    attachment_url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop',
+    attachment_name: 'cloudinary-setup-guide.png',
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: '3',
+    title: 'Perancangan Skema PostgreSQL Supabase',
+    course: 'Basis Data Terdistribusi',
+    description: 'Menjalankan migration script di Supabase SQL Editor dan mengaktifkan Row Level Security (RLS).',
+    deadline: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(),
+    priority: 'medium',
+    status: 'todo',
+    attachment_url: null,
+    attachment_name: null,
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: '4',
+    title: 'Setup Git-Ops & Continuous Deployment di Vercel',
+    course: 'DevOps Engineering',
+    description: 'Menghubungkan repository GitHub ke Vercel agar setiap git push pada branch main otomatis trigger production build.',
+    deadline: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString(),
+    priority: 'low',
+    status: 'todo',
+    attachment_url: 'https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?q=80&w=1200&auto=format&fit=crop',
+    attachment_name: 'git-flow-branching.jpg',
+    created_at: new Date().toISOString(),
+  }
+];
