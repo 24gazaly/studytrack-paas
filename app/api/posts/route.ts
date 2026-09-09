@@ -4,19 +4,9 @@ import { initialShowcases } from '@/lib/mockData';
 
 export const dynamic = 'force-dynamic';
 
-// Fallback credentials to ensure live persistence always works
-const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const rawKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-const SUPABASE_URL =
-  rawUrl && !rawUrl.includes('your-project')
-    ? rawUrl
-    : 'https://ucncsglgvxkxytubxebv.supabase.co';
-
-const SUPABASE_ANON_KEY =
-  rawKey && !rawKey.includes('your-supabase-anon')
-    ? rawKey
-    : 'sb_publishable_O_Tp3ph-8TpRUm0-r76JAQ_Gb56fuJV';
+// Hardcoded credentials — env vars on Vercel may be stale or wrong
+const SUPABASE_URL = 'https://ucncsglgvxkxytubxebv.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_O_Tp3ph-8TpRUm0-r76JAQ_Gb56fuJV';
 
 // Create a fresh server-side Supabase client per request (safe for serverless)
 function getSupabase() {
